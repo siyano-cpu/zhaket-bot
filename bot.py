@@ -13,6 +13,7 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 if not BOT_TOKEN:
     print("❌ خطا: BOT_TOKEN تنظیم نشده است!")
+    print("📝 لطفاً BOT_TOKEN را در Render تنظیم کنید")
     sys.exit(1)
 
 if not WEBHOOK_URL:
