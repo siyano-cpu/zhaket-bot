@@ -1,8 +1,7 @@
 import os
 import sys
-import threading
 import telebot
-from flask import Flask
+from flask import Flask, request
 
 # ============================================================
 # خواندن متغیرهای محیطی
@@ -10,32 +9,15 @@ from flask import Flask
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 PORT = int(os.getenv("PORT", 5000))
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # آدرس سرویس شما در Render
 
 if not BOT_TOKEN:
     print("❌ خطا: BOT_TOKEN تنظیم نشده است!")
     sys.exit(1)
 
-# ============================================================
-# تنظیم پروکسی (برای اتصال از ایران)
-# ============================================================
-
-# از پروکسی های زیر می‌توانید استفاده کنید
-# می‌توانید یکی از آنها را انتخاب کنید
-
-# پروکسی 1: mtproto (تلگرام)
-PROXY_URL = "socks5://127.0.0.1:1080"  # اگر از Shadowsocks یا مشابه استفاده می‌کنید
-
-# پروکسی 2: HTTP/S Proxy
-# PROXY_URL = "http://proxy-server:8080"
-
-# پروکسی 3: استفاده از Telethon (راه‌حل جایگزین)
-# اگر پروکسی کار نکرد، از Telethon استفاده کنید
-
-# تنظیم پروکسی برای Telebot
-if os.getenv("USE_PROXY", "false").lower() == "true":
-    from telebot import apihelper
-    apihelper.proxy = {'http': PROXY_URL, 'https': PROXY_URL}
-    print(f"✅ پروکسی فعال شد: {PROXY_URL}")
+if not WEBHOOK_URL:
+    print("❌ خطا: WEBHOOK_URL تنظیم نشده است!")
+    sys.exit(1)
 
 # ============================================================
 # راه‌اندازی ربات و Flask
@@ -46,11 +28,11 @@ app = Flask(__name__)
 
 print(f"""
 ============================================
-🤖 ربات @ZhaketBot
+🤖 ربات @ZhaketBot (Webhook Mode)
 ============================================
 ✅ توکن: {BOT_TOKEN[:10]}...
 🚪 پورت: {PORT}
-🌐 پروکسی: {os.getenv('USE_PROXY', 'غیرفعال')}
+🌐 Webhook URL: {WEBHOOK_URL}
 ============================================
 """)
 
@@ -82,7 +64,7 @@ def send_help(message):
 📖 **راهنمای ربات ژاکت**
 
 /start - شروع کار
-/products - لیست محصولات
+/products - محصولات
 /deals - تخفیف‌ها
 /cart - سبد خرید
 /profile - پروفایل
@@ -147,8 +129,18 @@ def handle_text(message):
     bot.reply_to(message, f"👋 سلام {message.from_user.first_name}!\nاز دستورات استفاده کنید یا روی /start کلیک کنید.")
 
 # ============================================================
-# مسیرهای Flask (برای Render)
+# مسیر Webhook
 # ============================================================
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    """دریافت پیام‌ها از تلگرام"""
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return 'OK', 200
+    return 'Invalid request', 400
 
 @app.route('/')
 def home():
@@ -159,6 +151,7 @@ def home():
         <h1>🤖 ربات @ZhaketBot</h1>
         <p>ربات فروشگاه ژاکت با موفقیت در حال اجراست!</p>
         <p style="color: #64748b;">وضعیت: 🟢 آنلاین</p>
+        <p style="color: #22c55e;">✅ Webhook فعال است</p>
         <hr>
         <p style="font-size: 0.9rem; color: #94a3b8;">
             📱 برای استفاده، ربات را در تلگرام باز کنید: <br>
@@ -173,21 +166,36 @@ def health():
     return "OK", 200
 
 # ============================================================
+# ثبت Webhook
+# ============================================================
+
+def set_webhook():
+    """ثبت Webhook در تلگرام"""
+    try:
+        # حذف Webhook قبلی
+        bot.delete_webhook()
+        
+        # تنظیم Webhook جدید
+        webhook_url = f"{WEBHOOK_URL}/webhook"
+        bot.set_webhook(url=webhook_url)
+        print(f"✅ Webhook تنظیم شد: {webhook_url}")
+        
+        # بررسی Webhook
+        info = bot.get_webhook_info()
+        print(f"📡 وضعیت Webhook: {info}")
+        
+    except Exception as e:
+        print(f"❌ خطا در تنظیم Webhook: {e}")
+
+# ============================================================
 # اجرا
 # ============================================================
 
 if __name__ == "__main__":
     print("🚀 راه‌اندازی ربات...")
     
-    # روش 1: استفاده از پروکسی (اگر فعال باشد)
-    try:
-        threading.Thread(target=bot.infinity_polling, daemon=True).start()
-        print("✅ ربات در حال اجرا است...")
-    except Exception as e:
-        print(f"❌ خطا در راه‌اندازی ربات: {e}")
-        print("🔄 تلاش با روش جایگزین...")
+    # ثبت Webhook
+    set_webhook()
     
-    # روش 2: استفاده از Telethon (راه‌حل جایگزین)
-    # اگر روش بالا کار نکرد، از این روش استفاده کنید
-    
+    # اجرای سرور Flask
     app.run(host="0.0.0.0", port=PORT)
