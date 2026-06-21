@@ -9,7 +9,7 @@ from flask import Flask, request
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 PORT = int(os.getenv("PORT", 5000))
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # آدرس سرویس شما در Render
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 if not BOT_TOKEN:
     print("❌ خطا: BOT_TOKEN تنظیم نشده است!")
@@ -17,6 +17,7 @@ if not BOT_TOKEN:
 
 if not WEBHOOK_URL:
     print("❌ خطا: WEBHOOK_URL تنظیم نشده است!")
+    print("📝 لطفاً WEBHOOK_URL را در Render تنظیم کنید")
     sys.exit(1)
 
 # ============================================================
@@ -166,7 +167,7 @@ def health():
     return "OK", 200
 
 # ============================================================
-# ثبت Webhook
+# تنظیم Webhook
 # ============================================================
 
 def set_webhook():
@@ -186,6 +187,7 @@ def set_webhook():
         
     except Exception as e:
         print(f"❌ خطا در تنظیم Webhook: {e}")
+        print("🔄 تلاش برای ادامه با Polling...")
 
 # ============================================================
 # اجرا
