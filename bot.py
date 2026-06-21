@@ -56,10 +56,10 @@ def send_welcome(message):
 @bot.message_handler(commands=['help'])
 def send_help(message):
     bot.reply_to(message, """
-📖 **راهنما**
+📖 **راهنمای ربات ژاکت**
 
-/start - شروع
-/products - محصولات
+/start - شروع کار
+/products - لیست محصولات
 /deals - تخفیف‌ها
 /cart - سبد خرید
 /profile - پروفایل
@@ -67,17 +67,83 @@ def send_help(message):
 /help - راهنما
 """)
 
+@bot.message_handler(commands=['products'])
+def show_products(message):
+    bot.reply_to(message, """
+🛍️ **لیست محصولات ژاکت**
+
+📦 قالب فروشگاهی دیجی‌مارت - رایگان 🎁
+📦 قالب شرکتی مدرن - ۵۲۰,۰۰۰ تومان
+📦 افزونه سئو پیشرفته - ۳۲۰,۰۰۰ تومان
+📦 باندل قالب شرکتی - ۷۹۰,۰۰۰ تومان
+""")
+
+@bot.message_handler(commands=['deals'])
+def show_deals(message):
+    bot.reply_to(message, """
+🏷️ **تخفیف‌های ویژه ژاکت**
+
+🔥 قالب فروشگاهی دیجی‌مارت - ۵۰٪ تخفیف (رایگان)
+🔥 افزونه سئو پیشرفته - ۴۰٪ تخفیف
+🔥 باندل قالب شرکتی - ۶۰٪ تخفیف
+""")
+
+@bot.message_handler(commands=['cart'])
+def show_cart(message):
+    bot.reply_to(message, """
+🛒 **سبد خرید شما**
+
+سبد خرید شما خالی است.
+
+برای افزودن محصول، از بخش محصولات استفاده کنید.
+""")
+
+@bot.message_handler(commands=['profile'])
+def show_profile(message):
+    user = message.from_user
+    bot.reply_to(message, f"""
+👤 **پروفایل کاربری**
+
+🆔 شناسه: {user.id}
+📛 نام: {user.first_name} {user.last_name or ''}
+👤 نام کاربری: @{user.username or 'ندارد'}
+""")
+
+@bot.message_handler(commands=['support'])
+def send_support(message):
+    bot.reply_to(message, """
+📞 **پشتیبانی ژاکت**
+
+📧 ایمیل: support@zhaket.com
+📞 تلفن: ۰۳۱۵۲۲۴۱۱۶۹۸
+💬 چت آنلاین: در وب‌سایت
+""")
+
 @bot.message_handler(func=lambda message: True)
 def handle_text(message):
-    bot.reply_to(message, f"👋 سلام {message.from_user.first_name}!\nاز دستورات استفاده کنید.")
+    bot.reply_to(message, f"👋 سلام {message.from_user.first_name}!\nاز دستورات استفاده کنید یا روی /start کلیک کنید.")
 
 # ============================================================
-# مسیرهای Flask
+# مسیرهای Flask (برای Render)
 # ============================================================
 
 @app.route('/')
 def home():
-    return "🤖 ربات @ZhaketBot در حال اجراست!"
+    return """
+    <html>
+    <head><title>ربات ژاکت</title></head>
+    <body style="font-family: Vazirmatn, sans-serif; text-align: center; padding: 50px;">
+        <h1>🤖 ربات @ZhaketBot</h1>
+        <p>ربات فروشگاه ژاکت با موفقیت در حال اجراست!</p>
+        <p style="color: #64748b;">وضعیت: 🟢 آنلاین</p>
+        <hr>
+        <p style="font-size: 0.9rem; color: #94a3b8;">
+            📱 برای استفاده، ربات را در تلگرام باز کنید: <br>
+            <a href="https://t.me/ZhaketBot">@ZhaketBot</a>
+        </p>
+    </body>
+    </html>
+    """
 
 @app.route('/health')
 def health():
